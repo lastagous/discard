@@ -4,7 +4,7 @@ import tailwind from '@astrojs/tailwind';
 
 export default defineConfig({
   site: 'https://lastagous.com',
-  base: '/discARd',
+  base: '/discard',
   output: 'static',
   integrations: [
     svelte(),
