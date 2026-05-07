@@ -1,0 +1,37 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<BaseLayout
+  title="認証中... | discARd"
+  description="Discord 認証処理中"
+  hideHeader={true}
+>
+  <div class="min-h-screen flex items-center justify-center">
+    <div class="text-center">
+      <div class="spinner w-10 h-10 mx-auto mb-6"></div>
+      <p class="text-text font-semibold text-lg mb-2">Discord 認証処理中...</p>
+      <p class="text-muted text-sm" id="status-text">セッションを確立しています</p>
+    </div>
+  </div>
+</BaseLayout>
+
+<script is:inline define:vars={{ base }}>
+  (function () {
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+
+    if (!token) {
+      document.getElementById('status-text').textContent = 'トークンが見つかりません。リダイレクトします...';
+      setTimeout(() => { location.href = base + '/?error=no_token'; }, 2000);
+      return;
+    }
+
+    localStorage.setItem('discard_token', token);
+
+    // URL からトークンを除去してリダイレクト
+    document.getElementById('status-text').textContent = 'ログイン完了！名刺ページへ移動します...';
+    setTimeout(() => { location.href = base + '/card'; }, 800);
+  })();
+</script>

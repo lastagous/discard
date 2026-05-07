@@ -1,0 +1,23 @@
+{
+  "name": "discard-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@astrojs/svelte": "^5.7.0",
+    "@astrojs/tailwind": "^5.1.0",
+    "@types/qrcode": "^1.5.5",
+    "astro": "^4.15.3",
+    "svelte": "^4.2.18",
+    "tailwindcss": "^3.4.10",
+    "typescript": "^5.5.3"
+  }
+}

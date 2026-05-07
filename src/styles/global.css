@@ -1,0 +1,117 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-bg text-text font-sans antialiased min-h-screen;
+    background-image: theme('backgroundImage.grid-pattern');
+    background-size: theme('backgroundSize.grid');
+  }
+
+  a {
+    @apply transition-colors duration-200;
+  }
+}
+
+@layer components {
+  /* ── カード共通 ── */
+  .card-glass {
+    @apply bg-card border border-border rounded-2xl;
+    backdrop-filter: blur(12px);
+  }
+
+  .card-glow {
+    box-shadow: 0 0 0 1px rgba(88, 101, 242, 0.2),
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  /* ── ボタン ── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl;
+    @apply bg-primary text-white font-semibold text-sm;
+    @apply hover:bg-primary-hover active:scale-95 transition-all duration-150;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg;
+    @apply border border-border text-muted text-sm font-medium;
+    @apply hover:border-primary hover:text-text transition-all duration-150;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg;
+    @apply border border-red text-red text-sm font-medium;
+    @apply hover:bg-red hover:text-white transition-all duration-150;
+  }
+
+  /* ── テキストエフェクト ── */
+  .text-glow-cyan {
+    color: theme('colors.cyan');
+    text-shadow: 0 0 16px rgba(0, 212, 255, 0.6);
+  }
+
+  .text-glow-primary {
+    color: theme('colors.primary');
+    text-shadow: 0 0 16px rgba(88, 101, 242, 0.6);
+  }
+
+  /* ── ネオンボーダー ── */
+  .border-glow-cyan {
+    border-color: theme('colors.cyan');
+    box-shadow: 0 0 12px rgba(0, 212, 255, 0.3),
+                inset 0 0 12px rgba(0, 212, 255, 0.05);
+  }
+
+  .border-glow-primary {
+    border-color: theme('colors.primary');
+    box-shadow: 0 0 12px rgba(88, 101, 242, 0.3),
+                inset 0 0 12px rgba(88, 101, 242, 0.05);
+  }
+
+  /* ── フォームインプット ── */
+  .input-field {
+    @apply w-full bg-surface border border-border rounded-lg px-4 py-2.5;
+    @apply text-text placeholder-muted text-sm outline-none;
+    @apply focus:border-primary focus:ring-1 focus:ring-primary transition-colors;
+  }
+
+  /* ── スキャンライン効果 ── */
+  .scanline-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 212, 255, 0.015) 2px,
+      rgba(0, 212, 255, 0.015) 4px
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* ── ローディングスピナー ── */
+  .spinner {
+    @apply inline-block w-5 h-5 border-2 border-border border-t-primary rounded-full;
+    animation: spin 0.7s linear infinite;
+  }
+
+  /* ── セクションヘッダー ── */
+  .section-label {
+    @apply text-xs font-mono text-cyan tracking-widest uppercase;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

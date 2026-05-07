@@ -1,0 +1,147 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import BusinessCard from '../components/ui/BusinessCard.svelte';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const workerUrl = import.meta.env.PUBLIC_WORKER_URL;
+---
+
+<BaseLayout
+  title="マイ名刺 | discARd"
+  description="あなたの Discord AR 電子名刺です。AR マーカーと QR コードで名刺を共有できます。"
+>
+  <div class="max-w-3xl mx-auto px-4 py-12">
+    <!-- ローディング中 -->
+    <div id="loading-state" class="text-center py-20">
+      <div class="spinner w-10 h-10 mx-auto mb-4"></div>
+      <p class="text-muted">名刺データを読み込んでいます...</p>
+    </div>
+
+    <!-- 未ログイン -->
+    <div id="unauthenticated-state" class="hidden text-center py-20">
+      <p class="text-6xl mb-6">🔐</p>
+      <h2 class="text-xl font-bold text-text mb-3">ログインが必要です</h2>
+      <p class="text-muted mb-8">Discord アカウントでログインして名刺を作成してください。</p>
+      <a href={`${workerUrl}/auth/login`} class="btn-primary">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057.1 18.08.11 18.1.128 18.11a19.9 19.9 0 0 0 5.993 3.03.077.077 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+        </svg>
+        Discord でログイン
+      </a>
+    </div>
+
+    <!-- エラー -->
+    <div id="error-state" class="hidden text-center py-20">
+      <p class="text-6xl mb-6">⚠️</p>
+      <h2 class="text-xl font-bold text-text mb-3">データを取得できませんでした</h2>
+      <p class="text-muted mb-8">ネットワークエラーが発生しました。再試行してください。</p>
+      <button onclick="location.reload()" class="btn-ghost">再試行</button>
+    </div>
+
+    <!-- 名刺表示 -->
+    <div id="card-state" class="hidden">
+      <div class="mb-8 flex items-start justify-between flex-wrap gap-4">
+        <div>
+          <p class="section-label mb-1">YOUR CARD</p>
+          <h1 class="text-2xl font-bold text-text">マイ AR 名刺</h1>
+          <p class="text-sm text-muted mt-1">下の名刺を他の人に見せてシェアしましょう</p>
+        </div>
+        <div class="flex gap-2">
+          <a id="ar-camera-link" href="#" class="btn-ghost text-sm">
+            <span class="inline-block w-2 h-2 rounded-full bg-cyan animate-pulse"></span>
+            AR カメラで見る
+          </a>
+          <button id="logout-btn" class="btn-danger text-sm">ログアウト</button>
+        </div>
+      </div>
+
+      <!-- Svelte BusinessCard コンポーネント -->
+      <div id="business-card-mount"></div>
+
+      <!-- 使い方ガイド -->
+      <div class="mt-10 card-glass p-6">
+        <p class="section-label mb-4">USAGE GUIDE</p>
+        <div class="grid sm:grid-cols-2 gap-4 text-sm">
+          <div class="flex gap-3">
+            <span class="text-cyan text-lg flex-shrink-0">①</span>
+            <div>
+              <p class="font-medium text-text mb-1">名刺を印刷 or 画面表示</p>
+              <p class="text-muted">AR マーカー（左の白黒パターン）を相手に見せます</p>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <span class="text-cyan text-lg flex-shrink-0">②</span>
+            <div>
+              <p class="font-medium text-text mb-1">QR コードをシェア</p>
+              <p class="text-muted">右の QR コードを相手にスキャンしてもらいます</p>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <span class="text-cyan text-lg flex-shrink-0">③</span>
+            <div>
+              <p class="font-medium text-text mb-1">相手が AR カメラを起動</p>
+              <p class="text-muted">QR スキャンで AR カメラページが開きます</p>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <span class="text-cyan text-lg flex-shrink-0">④</span>
+            <div>
+              <p class="font-medium text-text mb-1">名刺が現実に浮かぶ</p>
+              <p class="text-muted">AR マーカーにカメラを向けると名刺が空間に表示されます</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { getMe, getToken, logout, clearToken } from '../lib/api.ts';
+  import BusinessCard from '../components/ui/BusinessCard.svelte';
+  import { base } from '../lib/base.js';
+
+  async function init() {
+    const token = getToken();
+    if (!token) {
+      showState('unauthenticated');
+      return;
+    }
+
+    const user = await getMe(token);
+    if (!user) {
+      showState('unauthenticated');
+      return;
+    }
+
+    // AR カメラリンクを設定
+    const arLink = document.getElementById('ar-camera-link') as HTMLAnchorElement;
+    if (arLink) arLink.href = `${base}/ar?user=${user.id}`;
+
+    // BusinessCard コンポーネントをマウント
+    const mount = document.getElementById('business-card-mount');
+    if (mount) {
+      new BusinessCard({
+        target: mount,
+        props: { user, readonly: false },
+      });
+    }
+
+    // ログアウトボタン
+    document.getElementById('logout-btn')?.addEventListener('click', async () => {
+      await logout(token);
+      clearToken();
+      location.href = `${base}/`;
+    });
+
+    showState('card');
+  }
+
+  function showState(state: 'loading' | 'unauthenticated' | 'error' | 'card') {
+    ['loading', 'unauthenticated', 'error', 'card'].forEach(s => {
+      const el = document.getElementById(`${s}-state`);
+      if (el) el.classList.toggle('hidden', s !== state);
+    });
+  }
+
+  init().catch(() => showState('error'));
+</script>

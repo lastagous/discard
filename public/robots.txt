@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://lastagous.com/discARd/sitemap-index.xml

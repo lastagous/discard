@@ -1,0 +1,19 @@
+name = "discard-worker"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+
+[vars]
+FRONTEND_URL = "https://lastagous.com/discARd"
+
+# KV Namespaces (create with: wrangler kv namespace create SESSIONS / USERS)
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "REPLACE_WITH_SESSIONS_KV_ID"
+
+[[kv_namespaces]]
+binding = "USERS"
+id = "REPLACE_WITH_USERS_KV_ID"
+
+# Secrets (set with: wrangler secret put DISCORD_CLIENT_ID, etc.)
+# DISCORD_CLIENT_ID
+# DISCORD_CLIENT_SECRET

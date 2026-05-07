@@ -1,0 +1,15 @@
+# dependencies
+node_modules/
+worker/node_modules/
+
+# build output
+dist/
+.astro/
+
+# wrangler
+worker/.wrangler/
+
+# env
+.env
+.env.*
+!.env.example
