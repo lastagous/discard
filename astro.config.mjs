@@ -11,6 +11,6 @@ export default defineConfig({
     tailwind({ applyBaseStyles: false }),
   ],
   build: {
-    assets: '_assets',
+    assets: 'assets',
   },
 });
