@@ -98,6 +98,8 @@ export default {
       });
 
       if (!tokenRes.ok) {
+        const errBody = await tokenRes.text();
+        console.error('Discord token exchange failed', tokenRes.status, errBody);
         return Response.redirect(`${env.FRONTEND_URL}?error=token_exchange`, 302);
       }
 

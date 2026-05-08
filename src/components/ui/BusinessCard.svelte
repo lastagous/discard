@@ -128,7 +128,7 @@
           <p class="text-xs text-muted mb-1.5 font-mono">AR MARKER</p>
           <div class="hiro-marker-wrap">
             <img
-              src="https://raw.githubusercontent.com/nicholasdcampbell/aframe-ar/master/images/hiro.png"
+              src={`${base}/hiro.png`}
               alt="Hiro AR マーカー"
               class="hiro-marker-img"
             />

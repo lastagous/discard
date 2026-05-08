@@ -29,7 +29,7 @@ const workerUrl = import.meta.env.PUBLIC_WORKER_URL;
   </div>
 
   <!-- AR シーン（タップ後に挿入） -->
-  <div id="ar-container" style="display:none; width:100%; height:100%;"></div>
+  <div id="ar-container" style="display:none; position:fixed; inset:0; z-index:1;"></div>
 
   <!-- UI オーバーレイ -->
   <div id="ar-overlay" style="display:none;">
@@ -39,11 +39,14 @@ const workerUrl = import.meta.env.PUBLIC_WORKER_URL;
   </div>
 
   <!-- 使い方ヒント -->
-  <div id="ar-hint" style="display:none;">Hiro マーカーにカメラを向けてください</div>
+  <div id="ar-hint" style="display:none;">
+    Hiro マーカーにカメラを向けてください &nbsp;·&nbsp;
+    <a href={`${base}/marker`} target="_blank" style="color:#00d4ff;">マーカーを表示</a>
+  </div>
 
   <!-- A-Frame と AR.js を CDN から読み込む -->
   <script is:inline src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-  <script is:inline src="https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js"></script>
+  <script is:inline src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
 
   <script is:inline define:vars={{ base, workerUrl }}>
     const params = new URLSearchParams(location.search);
@@ -54,10 +57,12 @@ const workerUrl = import.meta.env.PUBLIC_WORKER_URL;
       this.textContent = '起動中...';
       this.disabled = true;
 
-      // カメラ権限を先にリクエスト（iOS Safari 対応）
+      // カメラストリームを取得（このストリームを背景 video と AR.js 両方で使う）
+      let cameraStream;
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        stream.getTracks().forEach(t => t.stop()); // 権限確認後すぐ停止（AR.js が改めて取得）
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' }
+        });
       } catch (e) {
         errEl.textContent = 'カメラへのアクセスが拒否されました。設定からカメラを許可してください。';
         errEl.style.display = 'block';
@@ -66,27 +71,54 @@ const workerUrl = import.meta.env.PUBLIC_WORKER_URL;
         return;
       }
 
+      // ネイティブ <video> を背景として表示（iOS WebGL 問題を回避）
+      const bgVideo = document.createElement('video');
+      bgVideo.setAttribute('playsinline', '');
+      bgVideo.setAttribute('webkit-playsinline', '');
+      bgVideo.setAttribute('autoplay', '');
+      bgVideo.muted = true;
+      bgVideo.srcObject = cameraStream;
+      Object.assign(bgVideo.style, {
+        position: 'fixed',
+        top: '0', left: '0',
+        width: '100vw', height: '100vh',
+        objectFit: 'cover',
+        zIndex: '0',
+        pointerEvents: 'none',
+      });
+      document.body.appendChild(bgVideo);
+      bgVideo.play().catch(() => {});
+
+      // AR.js の getUserMedia を横取りしてクローンストリームを渡す
+      // clone() により AR.js が独立してストリームを管理でき、loadedmetadata が正常に発火する
+      const _origGUM = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+      navigator.mediaDevices.getUserMedia = (c) => {
+        if (c && c.video) return Promise.resolve(cameraStream.clone());
+        return _origGUM(c);
+      };
+
       // タップ画面を非表示にして AR を表示
       document.getElementById('tap-screen').style.display = 'none';
       document.getElementById('ar-overlay').style.display = 'flex';
       document.getElementById('ar-hint').style.display = 'block';
 
-      // a-scene を動的に挿入（ユーザージェスチャー後）
+      // a-scene を動的に挿入（WebGL は alpha:true で透明にして 3D のみ描画）
       const container = document.getElementById('ar-container');
       container.style.display = 'block';
       container.innerHTML = `
         <a-scene
           id="ar-scene"
           embedded
+          style="width:100%;height:100%;"
           arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono; changeMatrixMode: modelViewMatrix;"
-          renderer="logarithmicDepthBuffer: true; colorManagement: true;"
+          renderer="alpha: true; antialias: false;"
           vr-mode-ui="enabled: false"
           loading-screen="enabled: false"
         >
           <a-assets id="ar-assets">
             <img id="avatar-asset" src="" crossorigin="anonymous" />
           </a-assets>
-          <a-marker preset="hiro" id="ar-marker" smooth="true" smoothCount="5">
+          <a-marker preset="hiro" id="ar-marker" smooth="true" smoothCount="10" smoothTolerance="0.01">
             <a-entity id="card-root" position="0 0 0">
               <a-plane id="card-bg" width="3.6" height="2.2" position="0 0.55 0" rotation="-90 0 0" material="color: #1a1a2e; opacity: 0.96; shader: flat"></a-plane>
               <a-plane width="3.6" height="0.02" position="0 1.66 0" rotation="-90 0 0" material="color: #00d4ff; opacity: 0.8; shader: flat"></a-plane>
@@ -104,6 +136,17 @@ const workerUrl = import.meta.env.PUBLIC_WORKER_URL;
           <a-entity camera></a-entity>
         </a-scene>
       `;
+
+      // AR.js が内部 video を作ったら非表示にする（bgVideo で表示するため）
+      const hideArJsVideo = () => {
+        document.querySelectorAll('video').forEach(v => {
+          if (v !== bgVideo) {
+            v.style.visibility = 'hidden';
+            v.style.position = 'fixed';
+          }
+        });
+      };
+      [500, 1000, 2000].forEach(t => setTimeout(hideArJsVideo, t));
 
       await initAR();
     });
