@@ -13,4 +13,9 @@ export default defineConfig({
   build: {
     assets: 'assets',
   },
+  vite: {
+    server: {
+      allowedHosts: true,
+    },
+  },
 });

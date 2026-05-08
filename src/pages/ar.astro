@@ -5,160 +5,110 @@ const workerUrl = import.meta.env.PUBLIC_WORKER_URL;
 ---
 
 <ArLayout title="AR カメラ | discARd">
-  <!-- A-Frame + AR.js のシーン -->
-  <a-scene
-    id="ar-scene"
-    embedded
-    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono; changeMatrixMode: modelViewMatrix;"
-    renderer="logarithmicDepthBuffer: true; colorManagement: true;"
-    vr-mode-ui="enabled: false"
-    loading-screen="enabled: false"
-  >
-    <a-assets id="ar-assets">
-      <img id="avatar-asset" src="" crossorigin="anonymous" />
-    </a-assets>
 
-    <!-- Hiro マーカー検出時に名刺を表示 -->
-    <a-marker preset="hiro" id="ar-marker" smooth="true" smoothCount="5">
-      <a-entity id="card-root" position="0 0 0">
-        <!-- 名刺背景パネル -->
-        <a-plane
-          id="card-bg"
-          width="3.6" height="2.2"
-          position="0 0.55 0"
-          rotation="-90 0 0"
-          material="color: #1a1a2e; opacity: 0.96; shader: flat"
-        ></a-plane>
+  <!-- タップ起動画面（iOS Safari 対応） -->
+  <div id="tap-screen" style="
+    position: fixed; inset: 0; z-index: 9999;
+    background: #0a0a14;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 24px;
+  ">
+    <div style="font-family: monospace; font-size: 22px; color: #00d4ff; font-weight: bold;">
+      disc<span style="color:#5865F2">AR</span>d
+    </div>
+    <p style="color: #72767d; font-size: 14px;">AR カメラを起動します</p>
+    <button id="start-btn" style="
+      padding: 16px 40px; border-radius: 12px;
+      background: #5865F2; color: white;
+      border: none; font-size: 16px; font-weight: 600;
+      cursor: pointer;
+    ">
+      タップしてカメラを起動
+    </button>
+    <p id="tap-error" style="color: #ed4245; font-size: 13px; display: none;"></p>
+  </div>
 
-        <!-- 上部グロウライン -->
-        <a-plane
-          width="3.6" height="0.02"
-          position="0 1.66 0"
-          rotation="-90 0 0"
-          material="color: #00d4ff; opacity: 0.8; shader: flat"
-        ></a-plane>
-
-        <!-- 左縦ライン -->
-        <a-plane
-          width="0.02" height="2.2"
-          position="-1.8 0.55 0"
-          rotation="-90 0 0"
-          material="color: #5865F2; opacity: 0.6; shader: flat"
-        ></a-plane>
-
-        <!-- アバター画像 -->
-        <a-circle
-          id="avatar-circle"
-          radius="0.38"
-          position="-1.3 0.55 0.02"
-          rotation="-90 0 0"
-          material="src: #avatar-asset; shader: flat"
-        ></a-circle>
-
-        <!-- アバター外枠リング -->
-        <a-torus
-          radius="0.4" radius-tubular="0.02"
-          position="-1.3 0.55 0.01"
-          rotation="-90 0 0"
-          material="color: #00d4ff; opacity: 0.7; shader: flat"
-        ></a-torus>
-
-        <!-- 表示名 -->
-        <a-text
-          id="ar-display-name"
-          value="Loading..."
-          position="-0.7 1.1 0.02"
-          rotation="-90 0 0"
-          color="#ffffff"
-          width="6"
-          anchor="left"
-          baseline="center"
-          font="roboto"
-        ></a-text>
-
-        <!-- ハンドル -->
-        <a-text
-          id="ar-handle"
-          value=""
-          position="-0.7 0.82 0.02"
-          rotation="-90 0 0"
-          color="#5865F2"
-          width="5"
-          anchor="left"
-          baseline="center"
-          font="roboto"
-        ></a-text>
-
-        <!-- 区切り線 -->
-        <a-plane
-          width="2.6" height="0.01"
-          position="0.2 0.65 0.02"
-          rotation="-90 0 0"
-          material="color: #2a2a4e; opacity: 0.8; shader: flat"
-        ></a-plane>
-
-        <!-- 自己紹介 -->
-        <a-text
-          id="ar-bio"
-          value=""
-          position="-0.7 0.42 0.02"
-          rotation="-90 0 0"
-          color="#9999bb"
-          width="5.5"
-          anchor="left"
-          baseline="top"
-          wrap-count="44"
-          font="roboto"
-        ></a-text>
-
-        <!-- discARd ロゴ -->
-        <a-text
-          value="discARd"
-          position="1.6 0.12 0.02"
-          rotation="-90 0 0"
-          color="#00d4ff"
-          width="2.5"
-          anchor="right"
-          baseline="center"
-          font="roboto"
-        ></a-text>
-
-        <!-- マーカー番号 -->
-        <a-text
-          id="ar-marker-id"
-          value=""
-          position="-1.7 0.12 0.02"
-          rotation="-90 0 0"
-          color="#4a4a6a"
-          width="2"
-          anchor="left"
-          baseline="center"
-          font="roboto"
-        ></a-text>
-      </a-entity>
-    </a-marker>
-
-    <a-entity camera></a-entity>
-  </a-scene>
+  <!-- AR シーン（タップ後に挿入） -->
+  <div id="ar-container" style="display:none; width:100%; height:100%;"></div>
 
   <!-- UI オーバーレイ -->
-  <div id="ar-overlay">
+  <div id="ar-overlay" style="display:none;">
     <a href={`${base}/`} class="ar-back-btn">← 戻る</a>
     <div id="ar-status">カメラを起動中...</div>
     <div id="ar-logo">discARd</div>
   </div>
 
   <!-- 使い方ヒント -->
-  <div id="ar-hint">Hiro マーカーにカメラを向けてください</div>
+  <div id="ar-hint" style="display:none;">Hiro マーカーにカメラを向けてください</div>
 
   <!-- A-Frame と AR.js を CDN から読み込む -->
   <script is:inline src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
   <script is:inline src="https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js"></script>
 
   <script is:inline define:vars={{ base, workerUrl }}>
+    const params = new URLSearchParams(location.search);
+    const userId = params.get('user');
+
+    document.getElementById('start-btn').addEventListener('click', async function () {
+      const errEl = document.getElementById('tap-error');
+      this.textContent = '起動中...';
+      this.disabled = true;
+
+      // カメラ権限を先にリクエスト（iOS Safari 対応）
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        stream.getTracks().forEach(t => t.stop()); // 権限確認後すぐ停止（AR.js が改めて取得）
+      } catch (e) {
+        errEl.textContent = 'カメラへのアクセスが拒否されました。設定からカメラを許可してください。';
+        errEl.style.display = 'block';
+        this.textContent = 'タップしてカメラを起動';
+        this.disabled = false;
+        return;
+      }
+
+      // タップ画面を非表示にして AR を表示
+      document.getElementById('tap-screen').style.display = 'none';
+      document.getElementById('ar-overlay').style.display = 'flex';
+      document.getElementById('ar-hint').style.display = 'block';
+
+      // a-scene を動的に挿入（ユーザージェスチャー後）
+      const container = document.getElementById('ar-container');
+      container.style.display = 'block';
+      container.innerHTML = `
+        <a-scene
+          id="ar-scene"
+          embedded
+          arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono; changeMatrixMode: modelViewMatrix;"
+          renderer="logarithmicDepthBuffer: true; colorManagement: true;"
+          vr-mode-ui="enabled: false"
+          loading-screen="enabled: false"
+        >
+          <a-assets id="ar-assets">
+            <img id="avatar-asset" src="" crossorigin="anonymous" />
+          </a-assets>
+          <a-marker preset="hiro" id="ar-marker" smooth="true" smoothCount="5">
+            <a-entity id="card-root" position="0 0 0">
+              <a-plane id="card-bg" width="3.6" height="2.2" position="0 0.55 0" rotation="-90 0 0" material="color: #1a1a2e; opacity: 0.96; shader: flat"></a-plane>
+              <a-plane width="3.6" height="0.02" position="0 1.66 0" rotation="-90 0 0" material="color: #00d4ff; opacity: 0.8; shader: flat"></a-plane>
+              <a-plane width="0.02" height="2.2" position="-1.8 0.55 0" rotation="-90 0 0" material="color: #5865F2; opacity: 0.6; shader: flat"></a-plane>
+              <a-circle id="avatar-circle" radius="0.38" position="-1.3 0.55 0.02" rotation="-90 0 0" material="shader: flat"></a-circle>
+              <a-torus radius="0.4" radius-tubular="0.02" position="-1.3 0.55 0.01" rotation="-90 0 0" material="color: #00d4ff; opacity: 0.7; shader: flat"></a-torus>
+              <a-text id="ar-display-name" value="Loading..." position="-0.7 1.1 0.02" rotation="-90 0 0" color="#ffffff" width="6" anchor="left" baseline="center" font="roboto"></a-text>
+              <a-text id="ar-handle" value="" position="-0.7 0.82 0.02" rotation="-90 0 0" color="#5865F2" width="5" anchor="left" baseline="center" font="roboto"></a-text>
+              <a-plane width="2.6" height="0.01" position="0.2 0.65 0.02" rotation="-90 0 0" material="color: #2a2a4e; opacity: 0.8; shader: flat"></a-plane>
+              <a-text id="ar-bio" value="" position="-0.7 0.42 0.02" rotation="-90 0 0" color="#9999bb" width="5.5" anchor="left" baseline="top" wrap-count="44" font="roboto"></a-text>
+              <a-text value="discARd" position="1.6 0.12 0.02" rotation="-90 0 0" color="#00d4ff" width="2.5" anchor="right" baseline="center" font="roboto"></a-text>
+              <a-text id="ar-marker-id" value="" position="-1.7 0.12 0.02" rotation="-90 0 0" color="#4a4a6a" width="2" anchor="left" baseline="center" font="roboto"></a-text>
+            </a-entity>
+          </a-marker>
+          <a-entity camera></a-entity>
+        </a-scene>
+      `;
+
+      await initAR();
+    });
+
     async function initAR() {
-      const params = new URLSearchParams(location.search);
-      const userId = params.get('user');
       const statusEl = document.getElementById('ar-status');
 
       if (!userId) {
@@ -166,7 +116,6 @@ const workerUrl = import.meta.env.PUBLIC_WORKER_URL;
         return;
       }
 
-      // ユーザーデータを取得
       let user;
       try {
         const res = await fetch(`${workerUrl}/api/user/${userId}`);
@@ -180,7 +129,6 @@ const workerUrl = import.meta.env.PUBLIC_WORKER_URL;
       const displayName = user.global_name || user.username;
       statusEl.textContent = `${displayName} の名刺を探しています...`;
 
-      // A-Frame シーンが準備できたらデータを反映
       const scene = document.getElementById('ar-scene');
 
       function applyUserData() {
@@ -189,14 +137,10 @@ const workerUrl = import.meta.env.PUBLIC_WORKER_URL;
         document.getElementById('ar-bio').setAttribute('value', user.bio || '');
         document.getElementById('ar-marker-id').setAttribute('value', `No.${user.marker_id}`);
 
-        // アバター画像を設定
         if (user.avatar) {
           const url = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`;
-          const asset = document.getElementById('avatar-asset');
-          asset.setAttribute('src', url);
-          document.getElementById('avatar-circle').setAttribute(
-            'material', `src: #avatar-asset; shader: flat`
-          );
+          document.getElementById('avatar-asset').setAttribute('src', url);
+          document.getElementById('avatar-circle').setAttribute('material', 'src: #avatar-asset; shader: flat');
         }
       }
 
@@ -206,7 +150,6 @@ const workerUrl = import.meta.env.PUBLIC_WORKER_URL;
         scene.addEventListener('loaded', applyUserData);
       }
 
-      // マーカーの検出イベント
       const marker = document.getElementById('ar-marker');
       const hint = document.getElementById('ar-hint');
 
@@ -219,13 +162,6 @@ const workerUrl = import.meta.env.PUBLIC_WORKER_URL;
         statusEl.textContent = `${displayName} の名刺を探しています...`;
         hint.style.display = 'block';
       });
-    }
-
-    // DOMContentLoaded 後に初期化
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initAR);
-    } else {
-      initAR();
     }
   </script>
 </ArLayout>
